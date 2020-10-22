@@ -1,5 +1,9 @@
 from app import db
 
+from flask import url_for
+
+from app.models.mixin_models import PaginatedAPIMixin
+
 heroRoles = db.Table(
     'heroRoles',
     db.Column('hero_id', db.Integer, db.ForeignKey('hero.id')),
@@ -12,7 +16,7 @@ class Role(db.Model):
 
     heroes = db.relationship('Hero', secondary=heroRoles, backref=db.backref('roles', lazy='dynamic'))
 
-class Hero(db.Model):
+class Hero(db.Model, PaginatedAPIMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50))
@@ -40,6 +44,61 @@ class Hero(db.Model):
     move_speed = db.Column(db.Integer)
     turn_rate = db.Column(db.Integer)
     cm_enabled = db.Column(db.Integer)
+
+    def get_roles_list(self):
+        return [role.role_name for role in self.roles.all()]
+
+    def get_icon_url(self):
+        return self.img.replace('full', 'icon')
+
+    def to_detailed_dict(self):
+        data = {
+            'id': self.id,
+            'name': self.localized_name,
+            'image_url': self.img,
+            'icon_url': self.get_icon_url(),
+            'primary_attr': self.primary_attr,
+            'attack_type': self.attack_type,
+            'base_health': self.base_health,
+            'base_health_regen': self.base_health_regen,
+            'base_mana': self.base_mana,
+            'base_mana_regen': self.base_mana_regen,
+            'base_armor': self.base_armor,
+            'base_mr': self.base_mr,
+            'base_attack_min': self.base_attack_min,
+            'base_attack_max': self.base_attack_max,
+            'base_str': self.base_str,
+            'base_agi': self.base_agi,
+            'base_int': self.base_int,
+            'str_gain': self.str_gain,
+            'agi_gain': self.agi_gain,
+            'int_gain': self.int_gain,
+            'attack_range': self.attack_range,
+            'projectile_speed': self.projectile_speed,
+            'attack_rate': self.attack_rate,
+            'move_speed': self.move_speed,
+            'turn_rate': self.turn_rate,
+            'cm_enabled': self.cm_enabled,
+            'roles': self.get_roles_list(),
+            '_links': {
+                'self': url_for('hero.get_hero', id=self.id)
+            }
+        }
+
+        return data
+
+    def to_dict(self):
+        data = {
+            'id': self.id,
+            'name': self.localized_name,
+            'image_url': self.img,
+            'icon_url': self.get_icon_url(),
+            '_links': {
+                'self': url_for('hero.get_hero', id=self.id)
+            }
+        }
+
+        return data
 
 
 class PublicMatch(db.Model):
